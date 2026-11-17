@@ -110,6 +110,11 @@ async def transcribe(request: Request):
     return JSONResponse(result)
 
 
+PROMPTS = {
+    "de": "Hallo, das ist eine Sprachnachricht. Ja, wie gesagt, das machen wir dann so: erst der Container, dann der Kipper. Gut, bis später, ciao!",
+}
+
+
 def _run(body: bytes, lang: str | None, max_minutes: int) -> dict:
     segments, info = state["model"].transcribe(
         io.BytesIO(body),
@@ -117,7 +122,13 @@ def _run(body: bytes, lang: str | None, max_minutes: int) -> dict:
         beam_size=5,
         vad_filter=True,
         vad_parameters={"min_silence_duration_ms": 500},
-        condition_on_previous_text=False,  # avoids runaway repetition loops
+        # Previous-text conditioning keeps capitalization/punctuation consistent across long messages
+        # (without it Whisper can drift into lowercase, unpunctuated text). Loops are still caught by the
+        # compression-ratio check + temperature fallback, and the prompt is dropped on a fallback.
+        condition_on_previous_text=True,
+        initial_prompt=PROMPTS.get(lang or "de"),
+        prompt_reset_on_temperature=0.5,
+        compression_ratio_threshold=2.4,
         temperature=[0.0, 0.2, 0.4],
     )
     if info.duration > max_minutes * 60:
