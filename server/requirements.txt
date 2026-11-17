@@ -1,0 +1,9 @@
+faster-whisper>=1.2.1,<2
+av<17                # faster-whisper 1.2.x breaks with av 17 (metadata_errors argument)
+fastapi>=0.115
+uvicorn>=0.30
+# GPU (Windows/Linux, NVIDIA): CUDA 12 runtime libraries from pip, no system CUDA install needed.
+# Skip these three lines if you run on CPU (set "device": "cpu", "compute_type": "int8" in data/config.json).
+nvidia-cublas-cu12
+nvidia-cudnn-cu12>=9,<10
+nvidia-cuda-nvrtc-cu12

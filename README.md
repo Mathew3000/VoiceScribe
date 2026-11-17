@@ -13,7 +13,7 @@ It is a debug-signed APK; allow "install unknown apps" on the phone.
 ## Layout
 
 - `app/` - Android app (Kotlin, no XML layouts, minSdk 26, arm64-v8a)
-- `server/` - transcription server and its auth model, see `server/README.md`
+- `server/` - transcription server and its auth model; setup guide in `server/README.md`
 - `.github/workflows/build-apk.yml` - builds the APK
 
 ## Build locally

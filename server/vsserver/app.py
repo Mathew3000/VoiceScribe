@@ -20,15 +20,29 @@ log = logging.getLogger("vsserver")
 
 
 def _add_cuda_dlls() -> None:
-    """On Windows the pip-installed CUDA libraries live in site-packages/nvidia/*/bin."""
-    if os.name != "nt":
-        return
+    """Make the pip-installed CUDA libraries (nvidia-cublas-cu12, nvidia-cudnn-cu12, ...) loadable.
+
+    Windows: DLLs live in site-packages/nvidia/*/bin. Linux: shared objects live in site-packages/nvidia/*/lib;
+    they are preloaded globally so ctranslate2 finds them (run.sh also exports LD_LIBRARY_PATH, which is the
+    more reliable route; this is the fallback when the server is started some other way).
+    """
     import sysconfig
 
     root = Path(sysconfig.get_paths()["purelib"]) / "nvidia"
-    for d in root.glob("*/bin"):
-        os.add_dll_directory(str(d))
-        os.environ["PATH"] = str(d) + os.pathsep + os.environ.get("PATH", "")
+    if os.name == "nt":
+        for d in root.glob("*/bin"):
+            os.add_dll_directory(str(d))
+            os.environ["PATH"] = str(d) + os.pathsep + os.environ.get("PATH", "")
+        return
+    import ctypes
+
+    # cuBLAS first: cuDNN and ctranslate2 depend on it
+    for pattern in ("cublas/lib/libcublasLt.so.*", "cublas/lib/libcublas.so.*", "cudnn/lib/libcudnn*.so.*"):
+        for lib in sorted(root.glob(pattern)):
+            try:
+                ctypes.CDLL(str(lib), mode=ctypes.RTLD_GLOBAL)
+            except OSError:
+                pass  # best effort; ctranslate2 reports a clear error if something is really missing
 
 
 _add_cuda_dlls()
