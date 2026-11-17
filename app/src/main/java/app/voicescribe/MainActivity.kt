@@ -63,6 +63,35 @@ class MainActivity : Activity() {
     private lateinit var serverLinks: LinearLayout
     private val server by lazy { ServerClient(this) }
     private var variant = "small"
+    private lateinit var langRow: TextView
+
+    /** Whisper language codes offered in the picker; "auto" lets the model detect the language. */
+    private val languages = listOf(
+        "auto" to "Automatisch erkennen", "de" to "Deutsch", "en" to "English", "fr" to "Français",
+        "es" to "Español", "it" to "Italiano", "pt" to "Português", "nl" to "Nederlands",
+        "pl" to "Polski", "tr" to "Türkçe", "ru" to "Русский", "uk" to "Українська",
+        "ar" to "العربية", "zh" to "中文", "ja" to "日本語", "ko" to "한국어",
+    )
+
+    private fun lang(): String = prefs.getString("lang", "de")?.takeIf { c -> languages.any { it.first == c } } ?: "de"
+
+    private fun updateLangRow() {
+        val name = languages.first { it.first == lang() }.second
+        langRow.text = "Sprache:  $name  ▾"
+    }
+
+    private fun pickLanguage() {
+        val names = languages.map { it.second }.toTypedArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Sprache der Nachricht")
+            .setSingleChoiceItems(names, languages.indexOfFirst { it.first == lang() }) { d, which ->
+                prefs.edit().putString("lang", languages[which].first).apply()
+                updateLangRow()
+                d.dismiss()
+            }
+            .setNegativeButton("Abbrechen", null)
+            .show()
+    }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -163,6 +192,16 @@ class MainActivity : Activity() {
         }
         styleChips()
 
+        // language picker
+        langRow = tv(14f, ink).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            background = rounded(card, 14)
+            elevation = dp(1).toFloat()
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setOnClickListener { pickLanguage() }
+        }
+        updateLangRow()
+
         // server card (only visible in mode "Hoch")
         serverInfo = tv(14f, muted)
         codeInput = EditText(this).apply {
@@ -244,6 +283,7 @@ class MainActivity : Activity() {
             addView(header)
             val gap = { LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) } }
             addView(chooser, gap())
+            addView(langRow, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
             addView(serverCard, gap())
             addView(statusCard, gap()); addView(hint, gap()); addView(historyCard, gap())
         }
@@ -501,7 +541,7 @@ class MainActivity : Activity() {
                 val res = withContext(Dispatchers.IO) {
                     val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
                         ?: error("Audiodatei konnte nicht gelesen werden.")
-                    server.transcribe(bytes, "de") { msg -> runOnUiThread { status.text = msg } }
+                    server.transcribe(bytes, lang()) { msg -> runOnUiThread { status.text = msg } }
                 }
                 progress.visibility = View.GONE
                 busy = false
@@ -537,7 +577,7 @@ class MainActivity : Activity() {
                 val text = withContext(Dispatchers.Default) {
                     val samples = AudioDecoder.decode(this@MainActivity, uri)
                     seconds = samples.size / 16000f
-                    val t = Transcriber(store)
+                    val t = Transcriber(store, if (lang() == "auto") "" else lang()) // "" = Whisper auto-detects
                     try {
                         t.transcribe(samples) { done, n ->
                             runOnUiThread {

@@ -125,7 +125,9 @@ async def transcribe(request: Request):
 
 
 PROMPTS = {
+    # Short, punctuated sample sentences: they keep capitalization and punctuation consistent. Other languages run without.
     "de": "Hallo, das ist eine Sprachnachricht. Ja, wie gesagt, das machen wir dann so: erst der Container, dann der Kipper. Gut, bis später, ciao!",
+    "en": "Hi, this is a voice message. Yes, as I said, we'll do it like this: first the container, then the truck. Okay, talk to you later, bye!",
 }
 
 
@@ -140,7 +142,7 @@ def _run(body: bytes, lang: str | None, max_minutes: int) -> dict:
         # (without it Whisper can drift into lowercase, unpunctuated text). Loops are still caught by the
         # compression-ratio check + temperature fallback, and the prompt is dropped on a fallback.
         condition_on_previous_text=True,
-        initial_prompt=PROMPTS.get(lang or "de"),
+        initial_prompt=PROMPTS.get(lang) if lang else None,  # no prompt when the language is auto-detected
         prompt_reset_on_temperature=0.5,
         compression_ratio_threshold=2.4,
         temperature=[0.0, 0.2, 0.4],
