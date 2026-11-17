@@ -14,8 +14,7 @@ The app's interface is in German. Messages can be transcribed in 16 languages or
 
 ## Download and install
 
-1. Open **[Releases -> Latest build](../../releases/tag/latest)** and download `VoiceScribe.apk`
-   (rebuilt by GitHub Actions on every push to `main`; tags like `v1.0` create a numbered release).
+1. Open **[Releases -> Latest build](../../releases/tag/latest)** and download `VoiceScribe.apk`.
 2. Open the file on the phone and allow "install unknown apps" for your browser/file manager when asked.
 3. Requirements: Android 8.0 or newer, a 64-bit ARM phone (practically every phone since ~2017).
 
