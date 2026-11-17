@@ -185,6 +185,28 @@ Everything except a trusted direct LAN peer must send a **signed request**:
 It is refused whenever the request carries a proxy header (`X-Forwarded-For`, ...), and loopback is **not** trusted,
 because a tunnel from your public server arrives as 127.0.0.1. The app itself always signs.
 
+## API (for your own clients)
+
+| Route | Purpose |
+|---|---|
+| `GET /v1/ping` | Auth check. `200 {"ok": true, "tier": ..., "model": ...}` plus an `X-Server-Proof` header (see below). |
+| `POST /v1/transcribe?language=de` | Body: the raw audio file (`application/octet-stream`, any format ffmpeg/PyAV reads, max 25 MB / 15 min). `language` is a 2-3 letter Whisper code, or `auto`. Returns `{"text", "language", "duration", "elapsed", "model"}`. |
+
+Every request is signed with the device secret (64 hex characters = 32 bytes, used as the raw HMAC key):
+
+    X-Device-Id: d_xxxxxxxxxxxx
+    X-Timestamp: <unix seconds>            (within ±120 s of the server clock)
+    X-Nonce:     <random hex, used once>
+    X-Signature: hex(HMAC-SHA256(secret_bytes,
+                   "v1\n" + METHOD + "\n" + LOGICAL_PATH + "\n" + QUERY + "\n" + TIMESTAMP + "\n" + NONCE + "\n" + hex(SHA256(body))))
+
+`QUERY` is the query string with the keys sorted (`language=de`), `body` is empty for `GET`. `LOGICAL_PATH` is
+`/v1/ping` or `/v1/transcribe` even if a proxy mounts the server under a prefix. The response header
+`X-Server-Proof` is `hex(HMAC-SHA256(secret_bytes, "proof\n" + NONCE))`; verify it if you send audio to an address
+you cannot otherwise trust. Status codes: `400` empty body or bad language, `401` bad or missing credentials, `413` too large/long, `429` too many
+failed attempts (blocked for 10 minutes), `503` busy. A trusted LAN peer may use `Authorization: Bearer <lan token>`
+instead of signing (see "LAN tier").
+
 ## Things you must still do yourself
 
 - **Hop between your public server and this machine:** the signature protects the secret, but the audio itself is only
