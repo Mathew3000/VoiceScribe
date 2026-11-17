@@ -1,11 +1,12 @@
 # VoiceScribe
 
-Transcribe WhatsApp voice messages to text. Share a voice message to the app; it transcribes (German) and shows the text.
+Transcribe WhatsApp voice messages to text. Share a voice message to the app; it transcribes and shows the text.
 
 - **Schnell / Genauer** - on-device Whisper (small / medium int8, via sherpa-onnx), no network after the model download.
-
-The language of the message is chosen in the app ("Sprache": German by default, 15 other languages, or automatic detection) and applies to all three modes.
 - **Hoch** - sends the audio to your own GPU server (`server/`, faster-whisper `large-v3`) with signed requests.
+
+The language of the message is chosen in the app ("Sprache": German by default, 15 other languages, or automatic
+detection) and applies to all three modes.
 
 ## Download
 
