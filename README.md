@@ -6,6 +6,12 @@ accuracy you can point the app at your own GPU server.
 
 The app's interface is in German. Messages can be transcribed in 16 languages or with automatic detection.
 
+<p align="center">
+  <img src="docs/main.png" alt="VoiceScribe main screen" width="300">
+  &nbsp;&nbsp;
+  <img src="docs/language.png" alt="Language selection" width="300">
+</p>
+
 ## Download and install
 
 1. Open **[Releases -> Latest build](../../releases/tag/latest)** and download `VoiceScribe.apk`
@@ -103,5 +109,12 @@ Pairing codes and device secrets are created by `server/manage.py` and never bel
 
 Built on [OpenAI Whisper](https://github.com/openai/whisper) (MIT), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)
 (Apache-2.0), [Silero VAD](https://github.com/snakers4/silero-vad) (MIT) and
-[faster-whisper](https://github.com/SYSTRAN/faster-whisper) (MIT). The repository itself does not have a license yet,
-so by default all rights are reserved; add a `LICENSE` file to say how others may use it.
+[faster-whisper](https://github.com/SYSTRAN/faster-whisper) (MIT). These keep their own licenses, which also apply to
+the APK that bundles sherpa-onnx.
+
+## License
+
+VoiceScribe is licensed under the **[PolyForm Noncommercial License 1.0.0](LICENSE)**: you may use, change and share it
+for any noncommercial purpose (personal use, hobby projects, research, study, charities, schools and the like), but not
+commercially. This is a source-available license, not an OSI "open source" license. For commercial use, contact the
+author.
