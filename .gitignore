@@ -1,0 +1,17 @@
+# build output / local tooling
+.gradle/
+.kotlin/
+build/
+local.properties
+.idea/
+*.apk
+*.aab
+app/libs/*.aar
+# keys and secrets - never commit
+*.jks
+*.keystore
+# server runtime data (device secrets, config, logs)
+server/data/
+__pycache__/
+*.pyc
+*.log

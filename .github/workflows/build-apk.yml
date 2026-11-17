@@ -1,0 +1,66 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SHERPA_VERSION: "2.0.1"
+  SHERPA_AAR_SHA256: "a8d09d1d32f3eb8520482c6d3d43fae674681c5b050385967c70a3c2c9bf0ee7"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to publish the release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Fetch sherpa-onnx AAR (pinned by checksum)
+        run: |
+          mkdir -p app/libs
+          curl -fL -o app/libs/sherpa-onnx-${SHERPA_VERSION}.aar \
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-${SHERPA_VERSION}.aar"
+          echo "${SHERPA_AAR_SHA256}  app/libs/sherpa-onnx-${SHERPA_VERSION}.aar" | sha256sum -c -
+
+      - name: Build APK
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Name the APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk VoiceScribe.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VoiceScribe-apk
+          path: VoiceScribe.apk
+          if-no-files-found: error
+
+      # Stable download link: the newest main build is always at Releases -> "latest".
+      - name: Publish rolling "latest" release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest VoiceScribe.apk --target "$GITHUB_SHA" --prerelease \
+            --title "Latest build" \
+            --notes "Automatic debug build of commit $GITHUB_SHA. Enable 'install unknown apps' on Android to install."
+
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" VoiceScribe.apk --title "$GITHUB_REF_NAME" --generate-notes
